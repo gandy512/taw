@@ -1,0 +1,49 @@
+<div class="page">
+  <form class="card" #form="ngForm" (ngSubmit)="submit()">
+    <h2>Nuova Application</h2>
+
+    <label>
+      Host institution
+      <select name="host" [(ngModel)]="host" required>
+        <option value="" disabled selected>Seleziona...</option>
+        @for (h of hosts(); track h.id) {
+          <option [value]="h.id">{{ h.name }} ({{ h.country }})</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Referent lecturer
+      <select name="lecturer" [(ngModel)]="lecturer" required>
+        <option value="" disabled selected>Seleziona...</option>
+        @for (l of lecturers(); track l.id) {
+          <option [value]="l.id">{{ l.name }} {{ l.surname }}</option>
+        }
+      </select>
+    </label>
+
+    <label>
+      Academic year
+      <input type="number" name="year" [(ngModel)]="year" required />
+    </label>
+
+    <label>
+      Semester
+      <select name="semester" [(ngModel)]="semester" required>
+        <option value="" disabled selected>Seleziona...</option>
+        <option value="Winter">Winter</option>
+        <option value="Summer">Summer</option>
+        <option value="FullYear">Full Year</option>
+      </select>
+    </label>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <div class="actions">
+      <button type="submit" [disabled]="form.invalid">Create</button>
+      <a class="button" routerLink="/student">Cancel</a>
+    </div>
+  </form>
+</div>

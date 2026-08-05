@@ -1,0 +1,33 @@
+<div class="page">
+  @if (auth.currentUser(); as user) {
+    <div class="card">
+      <h2>Bentornato, {{ user.name }} {{ user.surname }}</h2>
+      <p><strong>Ruolo:</strong> {{ user.role }}</p>
+      <p><strong>Username:</strong> {{ user.username }}</p>
+      <p><strong>Email:</strong> {{ user.email }}</p>
+      <button type="button" (click)="logout()">Logout</button>
+    </div>
+  } @else {
+    <form class="card" #form="ngForm">
+      <h2>Overseas Mobility — Accesso</h2>
+      <label>
+        Username
+        <input type="text" name="username" [(ngModel)]="username" required autocomplete="username" />
+      </label>
+      <label>
+        Password
+        <input type="password" name="password" [(ngModel)]="password" required autocomplete="current-password" />
+      </label>
+
+      @if (error()) {
+        <p class="error">{{ error() }}</p>
+      }
+
+      <div class="actions">
+        <button type="button" [disabled]="form.invalid" (click)="login('student')">Login as Student</button>
+        <button type="button" [disabled]="form.invalid" (click)="login('lecturer')">Login as Lecturer</button>
+        <button type="button" [disabled]="form.invalid" (click)="login('admin')">Login as Admin</button>
+      </div>
+    </form>
+  }
+</div>

@@ -1,0 +1,248 @@
+<div class="page">
+  <div class="card wide-card">
+    @if (application(); as app) {
+      <h2>Application — {{ app.student.name }} {{ app.student.surname }}</h2>
+      <p><strong>Email studente:</strong> {{ app.student.email }}</p>
+      <p><strong>Host:</strong> {{ app.host.name }} ({{ app.host.country }}, {{ app.host.city }})</p>
+      <p><strong>Anno:</strong> {{ app.year }} — <strong>Semestre:</strong> {{ app.semester }}</p>
+      @if (app.start) {
+        <p><strong>Data di inizio:</strong> {{ app.start | date }}</p>
+      }
+      @if (app.finish) {
+        <p><strong>Data di fine:</strong> {{ app.finish | date }}</p>
+      }
+
+      <hr />
+
+      @switch (phase()) {
+        @case ('canceled') {
+          <p>Questa application è stata annullata dallo studente o dall'ufficio Overseas.</p>
+        }
+        @case ('terminated') {
+          <p>Questa application è stata chiusa dall'ufficio Overseas.</p>
+        }
+        @case ('rejected') {
+          <p>Hai rifiutato questa application.</p>
+          @if (app.last_decision_reason) {
+            <p><strong>Motivo:</strong> {{ app.last_decision_reason }}</p>
+          }
+        }
+        @case ('incomplete') {
+          <p>In attesa che lo studente inserisca data di inizio, mapping e Learning Agreement.</p>
+        }
+
+        @default {
+          <h3>Mapping esami</h3>
+          @if (app.mapping.length > 0) {
+            <div class="side-by-side">
+              <div>
+                <h4>Ca' Foscari</h4>
+                <table>
+                  <thead>
+                    <tr><th>Codice</th><th>Nome</th><th>Crediti</th></tr>
+                  </thead>
+                  <tbody>
+                    @for (m of cfMapping(); track m.id) {
+                      <tr>
+                        <td>{{ m.module.code }}</td>
+                        <td>{{ m.module.name }}</td>
+                        <td>{{ m.module.credits }}</td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <p><strong>Totale:</strong> {{ cfCredits() }} crediti</p>
+              </div>
+              <div>
+                <h4>Estero</h4>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Codice</th><th>Nome</th><th>Crediti</th>
+                      @if (phase() === 'completing') {
+                        <th>Voto estero</th>
+                        <th>Voto CF</th>
+                      } @else if (phase() === 'grades-approved') {
+                        <th>Voto estero</th>
+                        <th>Voto CF</th>
+                      }
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (m of overseasMapping(); track m.id) {
+                      <tr>
+                        <td>{{ m.module.code }}</td>
+                        <td>{{ m.module.name }}</td>
+                        <td>{{ m.module.credits }}</td>
+                        @if (phase() === 'completing') {
+                          <td>{{ m.grade ?? '—' }}</td>
+                          <td>
+                            @if (canConvertGrades()) {
+                              <input type="number" [(ngModel)]="gradeCfDrafts[m.id]" [attr.name]="'gradecf-' + m.id" />
+                              <button type="button" (click)="saveConvertedGrade(m.id)">Salva</button>
+                            } @else {
+                              {{ m.grade_cf ?? '—' }}
+                            }
+                          </td>
+                        } @else if (phase() === 'grades-approved') {
+                          <td>{{ m.grade ?? '—' }}</td>
+                          <td>{{ m.grade_cf ?? '—' }}</td>
+                        }
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+                <p><strong>Totale:</strong> {{ overseasCredits() }} crediti</p>
+                @if (gradeError()) {
+                  <p class="error">{{ gradeError() }}</p>
+                }
+              </div>
+            </div>
+          } @else {
+            <p>Nessun mapping ancora inserito.</p>
+          }
+
+          <hr />
+
+          <h3>Learning Agreement</h3>
+          @if (app.learning_agreement) {
+            <div class="actions">
+              <button type="button" (click)="viewLearningAgreement()">Visualizza Learning Agreement</button>
+            </div>
+            @if (laError()) {
+              <p class="error">{{ laError() }}</p>
+            }
+          } @else {
+            <p>Non ancora caricato.</p>
+          }
+
+          @switch (phase()) {
+            @case ('awaiting-decision') {
+              <hr />
+              <h3>Decisione</h3>
+              <label>
+                Motivo (opzionale)
+                <input type="text" name="reason" [(ngModel)]="decisionReason" />
+              </label>
+              <div class="actions">
+                <button type="button" (click)="decide('acceptance')">Accetta</button>
+                <button type="button" (click)="decide('rejection')">Rifiuta</button>
+              </div>
+              @if (decisionError()) {
+                <p class="error">{{ decisionError() }}</p>
+              }
+            }
+
+            @case ('waiting-start') {
+              <hr />
+              <p>Application accettata, in attesa che la mobilità inizi.</p>
+            }
+
+            @case ('idle') {
+              <hr />
+              <p>Mobilità in corso. Lo studente non ha ancora proposto modifiche né avviato il completamento.</p>
+            }
+
+            @case ('pending-modification') {
+              <hr />
+              <h3>Modifica proposta</h3>
+              @if (app.modification_reason) {
+                <p><strong>Motivo della modifica:</strong> {{ app.modification_reason }}</p>
+              }
+
+              <div class="side-by-side">
+                <div>
+                  <h4>Ca' Foscari (proposta)</h4>
+                  <table>
+                    <thead><tr><th>Codice</th><th>Nome</th><th>Crediti</th></tr></thead>
+                    <tbody>
+                      @for (m of newCfMapping(); track m.id) {
+                        <tr>
+                          <td>{{ m.module.code }}</td>
+                          <td>{{ m.module.name }}</td>
+                          <td>{{ m.module.credits }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+                <div>
+                  <h4>Estero (proposta)</h4>
+                  <table>
+                    <thead><tr><th>Codice</th><th>Nome</th><th>Crediti</th></tr></thead>
+                    <tbody>
+                      @for (m of newOverseasMapping(); track m.id) {
+                        <tr>
+                          <td>{{ m.module.code }}</td>
+                          <td>{{ m.module.name }}</td>
+                          <td>{{ m.module.credits }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              @if (app.new_learning_agreement) {
+                <div class="actions">
+                  <button type="button" (click)="viewNewLearningAgreement()">Visualizza nuovo Learning Agreement</button>
+                </div>
+                @if (newLaError()) {
+                  <p class="error">{{ newLaError() }}</p>
+                }
+              } @else {
+                <p>Nuovo Learning Agreement non ancora caricato dallo studente.</p>
+              }
+
+              @if (readyForModificationDecision()) {
+                <label>
+                  Motivo (opzionale)
+                  <input type="text" name="modificationReason" [(ngModel)]="modificationReason" />
+                </label>
+                <div class="actions">
+                  <button type="button" (click)="decideModification('acceptance')">Accetta modifica</button>
+                  <button type="button" (click)="decideModification('rejection')">Rifiuta modifica</button>
+                </div>
+                @if (modificationError()) {
+                  <p class="error">{{ modificationError() }}</p>
+                }
+              } @else {
+                <p>In attesa del nuovo Learning Agreement prima di poter decidere.</p>
+              }
+            }
+
+            @case ('completing') {
+              <hr />
+              <h3>Transcript of Records</h3>
+              @if (app.transcript_of_records) {
+                <div class="actions">
+                  <button type="button" (click)="viewTranscriptOfRecords()">Visualizza Transcript of Records</button>
+                </div>
+                @if (torError()) {
+                  <p class="error">{{ torError() }}</p>
+                }
+                @if (canConvertGrades()) {
+                  <p>
+                    L'inserimento del voto Ca' Foscari per l'ultimo esame overseas mancante conclude
+                    automaticamente il riconoscimento dei voti.
+                  </p>
+                }
+              } @else {
+                <p>Transcript of Records non ancora caricato dallo studente.</p>
+              }
+            }
+
+            @case ('grades-approved') {
+              <hr />
+              <p>Voti riconosciuti. In attesa che l'ufficio Overseas chiuda la pratica.</p>
+            }
+          }
+        }
+      }
+
+      <div class="actions divider">
+        <a class="button" routerLink="/lecturer">&larr; Torna alla lista</a>
+      </div>
+    }
+  </div>
+</div>

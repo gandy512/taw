@@ -1,0 +1,31 @@
+<div class="page">
+  <div class="card list-card">
+    <h2>Students</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Name</th>
+          <th>Course</th>
+          <th>Email</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (student of students(); track student.id) {
+          <tr>
+            <td>{{ student.username }}</td>
+            <td>{{ student.name }} {{ student.surname }}</td>
+            <td>{{ student.course }}</td>
+            <td>{{ student.email }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="actions divider">
+      <a class="button" routerLink="/admin/students/new">Add Student</a>
+      <a class="button" routerLink="/admin">&larr; Torna alla dashboard</a>
+    </div>
+  </div>
+</div>

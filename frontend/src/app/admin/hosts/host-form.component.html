@@ -1,0 +1,31 @@
+<div class="page">
+  <form class="card" #form="ngForm" (ngSubmit)="submit()">
+    <h2>Add Host</h2>
+
+    <label>
+      Name
+      <input type="text" name="name" [(ngModel)]="name" required />
+    </label>
+    <label>
+      Country
+      <input type="text" name="country" [(ngModel)]="country" required />
+    </label>
+    <label>
+      City
+      <input type="text" name="city" [(ngModel)]="city" required />
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" [(ngModel)]="email" required />
+    </label>
+
+    @if (error()) {
+      <p class="error">{{ error() }}</p>
+    }
+
+    <div class="actions">
+      <button type="submit" [disabled]="form.invalid">Create</button>
+      <a class="button" routerLink="/admin/hosts">Cancel</a>
+    </div>
+  </form>
+</div>

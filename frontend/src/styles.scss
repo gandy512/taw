@@ -1,0 +1,132 @@
+body {
+  margin: 0;
+}
+
+.page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #f2f4f7;
+  font-family: system-ui, sans-serif;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: 320px;
+  padding: 2rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.card h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.card label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.card input,
+.card select {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.card .actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.card .actions.divider {
+  padding-top: 0.75rem;
+  border-top: 1px solid #e2e5ea;
+}
+
+.card button,
+.card a.button {
+  display: block;
+  padding: 0.6rem;
+  border: none;
+  border-radius: 4px;
+  background: #2b5cad;
+  color: white;
+  cursor: pointer;
+  font-size: 0.9rem;
+  text-align: center;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+
+.card button:disabled {
+  background: #a9b8cf;
+  cursor: not-allowed;
+}
+
+.card button:hover:not(:disabled),
+.card a.button:hover {
+  background: #1f437f;
+}
+
+.card .error {
+  color: #c0392b;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.list-card {
+  width: 600px;
+}
+
+.wide-card {
+  width: 720px;
+}
+
+.side-by-side {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.side-by-side > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.side-by-side h4 {
+  margin: 0 0 0.4rem;
+  font-size: 0.9rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid #e2e5ea;
+}
+
+tr.clickable {
+  cursor: pointer;
+}
+
+tr.clickable:hover {
+  background: #f2f4f7;
+}

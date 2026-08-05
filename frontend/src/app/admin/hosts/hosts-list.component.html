@@ -1,0 +1,31 @@
+<div class="page">
+  <div class="card list-card">
+    <h2>Hosts</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Country</th>
+          <th>City</th>
+          <th>Email</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (host of hosts(); track host.id) {
+          <tr>
+            <td>{{ host.name }}</td>
+            <td>{{ host.country }}</td>
+            <td>{{ host.city }}</td>
+            <td>{{ host.email }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="actions divider">
+      <a class="button" routerLink="/admin/hosts/new">Add Host</a>
+      <a class="button" routerLink="/admin">&larr; Torna alla dashboard</a>
+    </div>
+  </div>
+</div>

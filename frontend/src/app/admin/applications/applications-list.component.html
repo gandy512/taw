@@ -1,0 +1,30 @@
+<div class="page">
+  <div class="card list-card">
+    <h2>Applications</h2>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Lecturer</th>
+          <th>Host</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (application of applications(); track application.id) {
+          <tr class="clickable" (click)="open(application.id)">
+            <td>{{ application.student.name }} {{ application.student.surname }}</td>
+            <td>{{ application.lecturer.name }} {{ application.lecturer.surname }}</td>
+            <td>{{ application.host.name }}</td>
+            <td>{{ application.status }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="actions divider">
+      <a class="button" routerLink="/admin">&larr; Torna alla dashboard</a>
+    </div>
+  </div>
+</div>

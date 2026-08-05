@@ -1,0 +1,372 @@
+<div class="page">
+  <div class="card list-card">
+    @if (application(); as app) {
+      <h2>Application — {{ app.host.name }}</h2>
+      <p><strong>Lecturer:</strong> {{ app.lecturer.name }} {{ app.lecturer.surname }}</p>
+      <p><strong>Anno:</strong> {{ app.year }} — <strong>Semestre:</strong> {{ app.semester }}</p>
+      @if (app.start) {
+        <p><strong>Data di inizio:</strong> {{ app.start | date }}</p>
+      }
+      @if (app.finish) {
+        <p><strong>Data di fine:</strong> {{ app.finish | date }}</p>
+      }
+
+      <hr />
+
+      @switch (phase()) {
+        @case ('canceled') {
+          <p>Questa application è stata annullata.</p>
+        }
+        @case ('terminated') {
+          <p>Questa application è stata chiusa dall'ufficio Overseas.</p>
+        }
+        @case ('rejected') {
+          <p>Il docente ha rifiutato questa application.</p>
+          @if (app.last_decision_reason) {
+            <p><strong>Motivo:</strong> {{ app.last_decision_reason }}</p>
+          }
+          <p>Per ripartire con la stessa destinazione dovrai creare una nuova application.</p>
+        }
+
+        @case ('incomplete') {
+          <p>
+            Compila data di inizio, mapping esami (almeno 12 crediti Ca' Foscari e 12 overseas, CF non superiori
+            a overseas) e Learning Agreement, poi premi "Conferma". Puoi modificare tutto finché il docente non
+            decide.
+          </p>
+
+          <h3>Data di inizio</h3>
+          <input type="date" [(ngModel)]="startInput" name="start" />
+
+          <hr />
+
+          <h3>Mapping esami</h3>
+          @if (draftModules().length > 0) {
+            <table>
+              <thead>
+                <tr>
+                  <th>Codice</th>
+                  <th>Nome</th>
+                  <th>Crediti</th>
+                  <th>Tipo</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of draftModules(); track m.id) {
+                  <tr>
+                    <td>{{ m.code }}</td>
+                    <td>{{ m.name }}</td>
+                    <td>{{ m.credits }}</td>
+                    <td>{{ m.host ? 'Estero' : "Ca' Foscari" }}</td>
+                    <td><button type="button" (click)="removeFromDraft(m.id)">Rimuovi</button></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <p><strong>Totali:</strong> {{ cfCredits() }} Ca' Foscari / {{ overseasCredits() }} overseas</p>
+          }
+
+          <div class="actions">
+            <select [(ngModel)]="selectedModule" name="module">
+              <option value="" disabled selected>Seleziona un esame...</option>
+              <optgroup label="Ca' Foscari">
+                @for (m of cfModules(); track m.id) {
+                  <option [value]="m.id">{{ m.code }} — {{ m.name }} ({{ m.credits }} cr)</option>
+                }
+              </optgroup>
+              <optgroup label="Host institution">
+                @for (m of hostModules(); track m.id) {
+                  <option [value]="m.id">{{ m.code }} — {{ m.name }} ({{ m.credits }} cr)</option>
+                }
+              </optgroup>
+            </select>
+            <button type="button" [disabled]="!selectedModule" (click)="addToDraft()">Aggiungi alla lista</button>
+          </div>
+
+          <hr />
+
+          <h3>Learning Agreement</h3>
+          @if (app.learning_agreement) {
+            <p>Caricato ✓ (seleziona un file per sostituirlo)</p>
+          }
+          <input type="file" accept="application/pdf" (change)="onLaFileSelected($event)" />
+
+          <hr />
+
+          <div class="actions">
+            <button
+              type="button"
+              [disabled]="!startInput || !draftValid() || (!selectedLaFile && !app.learning_agreement)"
+              (click)="confirmPlan()"
+            >
+              Conferma
+            </button>
+          </div>
+          @if (planError()) {
+            <p class="error">{{ planError() }}</p>
+          }
+        }
+
+        @case ('waiting-start') {
+          <p><strong>Stato:</strong> accettata, in attesa dell'inizio della mobilità.</p>
+          <p>Da qui a quel momento l'application non è modificabile.</p>
+
+          <div class="actions">
+            <button type="button" (click)="cancelApplication()">Annulla application</button>
+          </div>
+          @if (cancelError()) {
+            <p class="error">{{ cancelError() }}</p>
+          }
+        }
+
+        @case ('pending-modification') {
+          <p>Hai proposto una modifica al mapping e/o al Learning Agreement, in attesa della decisione del docente.</p>
+
+          <h3>Proposta</h3>
+          @if (app.new_mapping.length > 0) {
+            <table>
+              <thead>
+                <tr><th>Codice</th><th>Nome</th><th>Crediti</th><th>Tipo</th></tr>
+              </thead>
+              <tbody>
+                @for (m of app.new_mapping; track m.id) {
+                  <tr>
+                    <td>{{ m.module.code }}</td>
+                    <td>{{ m.module.name }}</td>
+                    <td>{{ m.module.credits }}</td>
+                    <td>{{ m.module.host ? 'Estero' : "Ca' Foscari" }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+          @if (app.modification_reason) {
+            <p><strong>Motivo della modifica:</strong> {{ app.modification_reason }}</p>
+          }
+          @if (app.new_learning_agreement) {
+            <p>Nuovo Learning Agreement caricato ✓</p>
+          }
+        }
+
+        @case ('choice') {
+          @if (app.last_modification_decision === 'rejection' && app.last_modification_decision_reason) {
+            <p class="error">
+              L'ultima modifica proposta è stata rifiutata dal docente: {{ app.last_modification_decision_reason }}
+            </p>
+          }
+
+          <h3>Mapping esami approvato</h3>
+          <table>
+            <thead>
+              <tr><th>Codice</th><th>Nome</th><th>Crediti</th><th>Tipo</th></tr>
+            </thead>
+            <tbody>
+              @for (m of app.mapping; track m.id) {
+                <tr>
+                  <td>{{ m.module.code }}</td>
+                  <td>{{ m.module.name }}</td>
+                  <td>{{ m.module.credits }}</td>
+                  <td>{{ m.module.host ? 'Estero' : "Ca' Foscari" }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+
+          @if (!modifyChosen() && !completeChosen()) {
+            <hr />
+            <p>Sei in mobilità. Puoi proporre una modifica al piano, oppure completare la mobilità.</p>
+            <div class="actions">
+              <button type="button" (click)="startModify()">Modifica mapping / Learning Agreement</button>
+              <button type="button" (click)="startComplete()">Completa mobilità</button>
+            </div>
+          }
+
+          @if (modifyChosen()) {
+            <hr />
+            <h3>Proponi modifica al mapping</h3>
+            <p>Compila mapping e Learning Agreement, poi premi "Conferma modifica".</p>
+            @if (draftModules().length > 0) {
+              <table>
+                <thead>
+                  <tr><th>Codice</th><th>Nome</th><th>Crediti</th><th>Tipo</th><th></th></tr>
+                </thead>
+                <tbody>
+                  @for (m of draftModules(); track m.id) {
+                    <tr>
+                      <td>{{ m.code }}</td>
+                      <td>{{ m.name }}</td>
+                      <td>{{ m.credits }}</td>
+                      <td>{{ m.host ? 'Estero' : "Ca' Foscari" }}</td>
+                      <td><button type="button" (click)="removeFromDraft(m.id)">Rimuovi</button></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+              <p><strong>Totali:</strong> {{ cfCredits() }} Ca' Foscari / {{ overseasCredits() }} overseas</p>
+            }
+            <div class="actions">
+              <select [(ngModel)]="selectedModule" name="module">
+                <option value="" disabled selected>Seleziona un esame...</option>
+                <optgroup label="Ca' Foscari">
+                  @for (m of cfModules(); track m.id) {
+                    <option [value]="m.id">{{ m.code }} — {{ m.name }} ({{ m.credits }} cr)</option>
+                  }
+                </optgroup>
+                <optgroup label="Host institution">
+                  @for (m of hostModules(); track m.id) {
+                    <option [value]="m.id">{{ m.code }} — {{ m.name }} ({{ m.credits }} cr)</option>
+                  }
+                </optgroup>
+              </select>
+              <button type="button" [disabled]="!selectedModule" (click)="addToDraft()">Aggiungi alla lista</button>
+            </div>
+
+            <h4>Motivo della modifica</h4>
+            <textarea [(ngModel)]="modificationReasonInput" name="modificationReason" rows="3"></textarea>
+
+            <h4>Nuovo Learning Agreement</h4>
+            <input type="file" accept="application/pdf" (change)="onLaFileSelected($event)" />
+
+            <div class="actions">
+              <button
+                type="button"
+                [disabled]="
+                  !draftValid() || !modificationReasonInput.trim() || (!selectedLaFile && !app.new_learning_agreement)
+                "
+                (click)="confirmModification()"
+              >
+                Conferma modifica
+              </button>
+            </div>
+            @if (modificationError()) {
+              <p class="error">{{ modificationError() }}</p>
+            }
+          }
+
+          @if (completeChosen()) {
+            <hr />
+            <h3>Completa mobilità</h3>
+            <p>Compila data di fine, voti overseas e Transcript of Records, poi premi "Conferma completamento".</p>
+
+            <h4>Data di fine mobilità</h4>
+            <input type="date" [(ngModel)]="finishInput" name="finish" />
+
+            <h4>Voti esami overseas</h4>
+            @if (overseasMapping().length > 0) {
+              <table>
+                <thead>
+                  <tr><th>Codice</th><th>Nome</th><th>Voto estero</th><th>Data esame</th></tr>
+                </thead>
+                <tbody>
+                  @for (m of overseasMapping(); track m.id) {
+                    <tr>
+                      <td>{{ m.module.code }}</td>
+                      <td>{{ m.module.name }}</td>
+                      <td><input type="number" [(ngModel)]="gradeDrafts[m.id].grade" [attr.name]="'grade-' + m.id" /></td>
+                      <td><input type="date" [(ngModel)]="gradeDrafts[m.id].examDate" [attr.name]="'date-' + m.id" /></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <p>Nessun esame overseas nel mapping.</p>
+            }
+
+            <h4>Transcript of Records</h4>
+            <input type="file" accept="application/pdf" (change)="onTorFileSelected($event)" />
+
+            <div class="actions">
+              <button
+                type="button"
+                [disabled]="!finishInput || (!selectedTorFile && !app.transcript_of_records)"
+                (click)="confirmCompletion()"
+              >
+                Conferma completamento
+              </button>
+            </div>
+            @if (completeError()) {
+              <p class="error">{{ completeError() }}</p>
+            }
+          }
+        }
+
+        @case ('completing') {
+          <p>Hai già avviato il completamento della mobilità. Puoi correggere i dati e riconfermare finché il docente non riconosce i voti.</p>
+
+          <h3>Data di fine mobilità</h3>
+          <input type="date" [(ngModel)]="finishInput" name="finish" />
+
+          <hr />
+
+          <h3>Voti esami overseas</h3>
+          @if (overseasMapping().length > 0) {
+            <table>
+              <thead>
+                <tr><th>Codice</th><th>Nome</th><th>Voto estero</th><th>Data esame</th></tr>
+              </thead>
+              <tbody>
+                @for (m of overseasMapping(); track m.id) {
+                  <tr>
+                    <td>{{ m.module.code }}</td>
+                    <td>{{ m.module.name }}</td>
+                    <td><input type="number" [(ngModel)]="gradeDrafts[m.id].grade" [attr.name]="'grade-' + m.id" /></td>
+                    <td><input type="date" [(ngModel)]="gradeDrafts[m.id].examDate" [attr.name]="'date-' + m.id" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          } @else {
+            <p>Nessun esame overseas nel mapping.</p>
+          }
+
+          <hr />
+
+          <h3>Transcript of Records</h3>
+          @if (app.transcript_of_records) {
+            <p>Caricato ✓ (seleziona un file per sostituirlo)</p>
+          }
+          <input type="file" accept="application/pdf" (change)="onTorFileSelected($event)" />
+
+          <hr />
+
+          <div class="actions">
+            <button
+              type="button"
+              [disabled]="!finishInput || (!selectedTorFile && !app.transcript_of_records)"
+              (click)="confirmCompletion()"
+            >
+              Conferma completamento
+            </button>
+          </div>
+          @if (completeError()) {
+            <p class="error">{{ completeError() }}</p>
+          }
+        }
+
+        @case ('grades-approved') {
+          <p>Il docente ha riconosciuto i voti. In attesa che l'ufficio Overseas chiuda la pratica.</p>
+          <table>
+            <thead>
+              <tr><th>Codice</th><th>Nome</th><th>Voto estero</th><th>Voto Ca' Foscari</th></tr>
+            </thead>
+            <tbody>
+              @for (m of overseasMapping(); track m.id) {
+                <tr>
+                  <td>{{ m.module.code }}</td>
+                  <td>{{ m.module.name }}</td>
+                  <td>{{ m.grade }}</td>
+                  <td>{{ m.grade_cf }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      }
+
+      <div class="actions divider">
+        <a class="button" routerLink="/student/applications">&larr; Torna alla lista</a>
+      </div>
+    }
+  </div>
+</div>

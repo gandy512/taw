@@ -1,0 +1,119 @@
+<div class="page">
+  <div class="card wide-card">
+    @if (application(); as app) {
+      <h2>Application — {{ app.student.name }} {{ app.student.surname }}</h2>
+      <p><strong>Email studente:</strong> {{ app.student.email }}</p>
+      <p><strong>Lecturer:</strong> {{ app.lecturer.name }} {{ app.lecturer.surname }}</p>
+      <p><strong>Host:</strong> {{ app.host.name }} ({{ app.host.country }}, {{ app.host.city }})</p>
+      <p><strong>Anno:</strong> {{ app.year }} — <strong>Semestre:</strong> {{ app.semester }}</p>
+      <p><strong>Stato:</strong> {{ app.status }}</p>
+      @if (app.start) {
+        <p><strong>Data di inizio:</strong> {{ app.start | date }}</p>
+      }
+      @if (app.finish) {
+        <p><strong>Data di fine:</strong> {{ app.finish | date }}</p>
+      }
+      @if (app.grades_approved_date) {
+        <p><strong>Voti approvati il:</strong> {{ app.grades_approved_date | date }}</p>
+      }
+      @if (app.last_decision === 'rejection' && app.last_decision_reason) {
+        <p><strong>Motivo del rifiuto:</strong> {{ app.last_decision_reason }}</p>
+      }
+
+      <hr />
+
+      <h3>Mapping esami</h3>
+      @if (app.mapping.length > 0) {
+        <div class="side-by-side">
+          <div>
+            <h4>Ca' Foscari</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Codice</th>
+                  <th>Nome</th>
+                  <th>Crediti</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of cfMapping(); track m.id) {
+                  <tr>
+                    <td>{{ m.module.code }}</td>
+                    <td>{{ m.module.name }}</td>
+                    <td>{{ m.module.credits }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <p><strong>Totale:</strong> {{ cfCredits() }} crediti</p>
+          </div>
+          <div>
+            <h4>Estero</h4>
+            <table>
+              <thead>
+                <tr>
+                  <th>Codice</th>
+                  <th>Nome</th>
+                  <th>Crediti</th>
+                  <th>Voto estero</th>
+                  <th>Voto CF</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of overseasMapping(); track m.id) {
+                  <tr>
+                    <td>{{ m.module.code }}</td>
+                    <td>{{ m.module.name }}</td>
+                    <td>{{ m.module.credits }}</td>
+                    <td>{{ m.grade ?? '—' }}</td>
+                    <td>{{ m.grade_cf ?? '—' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <p><strong>Totale:</strong> {{ overseasCredits() }} crediti</p>
+          </div>
+        </div>
+      } @else {
+        <p>Nessun mapping ancora inserito.</p>
+      }
+
+      @if (isActionable()) {
+        <hr />
+        <h3>Verifica pre-partenza</h3>
+        <p>
+          @if (app.status === 'pre_departure_verified') {
+            Fase pre-partenza verificata ✓
+          } @else {
+            Da verificare, disponibile solo dopo l'accettazione del docente.
+          }
+        </p>
+        <div class="actions">
+          <button type="button" [disabled]="!canVerifyPreDeparture()" (click)="verifyPreDeparture()">
+            Verifica pre-partenza completata
+          </button>
+        </div>
+        @if (verifyError()) {
+          <p class="error">{{ verifyError() }}</p>
+        }
+
+        <hr />
+        <h3>Chiusura pratica</h3>
+        <div class="actions">
+          <button type="button" [disabled]="!canTerminate()" (click)="terminate()">Segna come terminata</button>
+          <button type="button" (click)="cancel()">Cancella (casi gravi)</button>
+        </div>
+        @if (terminateError()) {
+          <p class="error">{{ terminateError() }}</p>
+        }
+        @if (cancelError()) {
+          <p class="error">{{ cancelError() }}</p>
+        }
+      }
+
+      <div class="actions divider">
+        <a class="button" routerLink="/admin/applications">&larr; Torna alla lista</a>
+      </div>
+    }
+  </div>
+</div>
