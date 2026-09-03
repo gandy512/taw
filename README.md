@@ -2,11 +2,35 @@
 
 Gestione della mobilità internazionale (Ca' Foscari) — backend Express/MongoDB + frontend Angular, ciascuno in un container Docker separato.
 
-## Requisiti
+## Requisiti minimi
 
-Solo Docker e Docker Compose. Non serve installare Node.js, MongoDB o alcuna dipendenza sull'host: tutto gira nei container.
+Per inizializzare l'app da zero servono solo:
 
-## Avvio
+- Docker Desktop (Windows/macOS) **oppure** Docker Engine + Docker Compose plugin (Linux)
+- Git
+- Porte libere: `4200` (frontend), `3001` (backend), `27018` (MongoDB)
+
+Non serve installare Node.js o MongoDB in locale: tutto gira nei container.
+
+## Inizializzazione completa (prima esecuzione)
+
+### 1) Clona il repository
+
+```bash
+git clone https://github.com/gandy512/taw.git
+cd taw
+```
+
+### 2) Verifica che Docker sia attivo
+
+```bash
+docker --version
+docker compose version
+```
+
+Se ricevi errori, avvia Docker Desktop (o il servizio Docker su Linux) e riprova.
+
+### 3) Avvia l'applicazione
 
 Dalla root del progetto:
 
@@ -14,29 +38,64 @@ Dalla root del progetto:
 docker compose up --build
 ```
 
-Il flag `--build` è necessario solo la prima volta (o dopo aver modificato `package.json`/`Dockerfile`); nelle esecuzioni successive è sufficiente:
+`--build` è obbligatorio al primo avvio (o dopo modifiche a `Dockerfile` / `package.json`).
+
+### 4) Attendi il completamento dell'avvio
+
+Al primo run Docker deve:
+- costruire le immagini
+- installare le dipendenze nei container
+- avviare frontend, backend e database
+
+Può richiedere qualche minuto.
+
+### 5) Verifica i servizi
+
+Quando i container sono avviati, apri:
+
+- Frontend: http://localhost:4200
+- Health backend: http://localhost:3001/api/health
+- Mongo esposto in locale: `localhost:27018`
+
+Se frontend e health endpoint rispondono, l'app è inizializzata correttamente.
+
+## Accesso iniziale (primo login)
+
+1. Apri http://localhost:4200
+2. Scegli il ruolo (Student / Lecturer / Admin)
+3. Inserisci username/password dalla tabella utenti di test qui sotto
+
+> Nota: ad ogni avvio del backend il database viene **azzerato e riseedato** con i dati demo.
+
+## Avvii successivi
+
+Dopo il primo avvio non è necessario ricostruire:
 
 ```bash
 docker compose up
 ```
 
-- Frontend: http://localhost:4200
-- Backend: http://localhost:3001/api/health
-- Mongo: `localhost:27018`
+## Arresto e reset
 
-Per fermare i container (mantenendo i volumi, quindi i `node_modules` già installati):
+Ferma i container mantenendo i volumi:
 
 ```bash
 docker compose down
 ```
 
-Per una pulizia completa (rimuove anche i volumi, incluso il database Mongo):
+Reset completo (rimuove anche i volumi e il database):
 
 ```bash
 docker compose down -v
 ```
 
-I sorgenti (`backend/`, `frontend/`) sono montati come volumi: modifica un file e il servizio si ricarica da solo. Il database viene **droppato e riseedato ad ogni avvio** del backend.
+I sorgenti (`backend/`, `frontend/`) sono montati come volumi: modificando i file locali, i servizi si aggiornano automaticamente.
+
+## Troubleshooting rapido
+
+- **Porta già in uso**: libera la porta occupata (`4200`, `3001`, `27018`) e rilancia `docker compose up`.
+- **Container non partono dopo modifiche dipendenze**: usa `docker compose up --build`.
+- **Stato incoerente o errori strani al boot**: esegui `docker compose down -v` e poi `docker compose up --build`.
 
 ## Utenti di test (seed)
 
