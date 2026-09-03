@@ -7,7 +7,6 @@ Gestione della mobilità internazionale (Ca' Foscari) — backend Express/MongoD
 Per inizializzare l'app da zero servono solo:
 
 - Docker Desktop (Windows/macOS) **oppure** Docker Engine + Docker Compose plugin (Linux)
-- Git
 - Porte libere: `4200` (frontend), `3001` (backend), `27018` (MongoDB)
 
 Non serve installare Node.js o MongoDB in locale: tutto gira nei container.
