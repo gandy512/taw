@@ -21,6 +21,12 @@ git clone https://github.com/gandy512/taw.git
 cd taw
 ```
 
+Se il progetto è già presente sul tuo PC, entra semplicemente nella cartella root del progetto:
+
+```bash
+cd /percorso/assoluto/taw
+```
+
 ### 2) Verifica che Docker sia attivo
 
 ```bash
@@ -74,6 +80,39 @@ Dopo il primo avvio non è necessario ricostruire:
 ```bash
 docker compose up
 ```
+
+## Avvio manuale in 3 terminali (opzionale)
+
+Se preferisci avviare i servizi separatamente, puoi usare 3 terminali. In questa modalità servono anche Node.js e npm installati in locale.
+
+### Terminale 1 — MongoDB
+
+```bash
+docker run --name overseas-mongo -p 27018:27017 mongo:7
+```
+
+> Se il container esiste già, avvialo con `docker start overseas-mongo`.
+
+### Terminale 2 — Backend
+
+```bash
+cd /percorso/assoluto/taw/backend
+npm install
+MONGO_URI=mongodb://localhost:27018/overseas PORT=3001 npm run dev
+```
+
+### Terminale 3 — Frontend
+
+```bash
+cd /percorso/assoluto/taw/frontend
+npm install
+npm start
+```
+
+### Accesso
+
+- Frontend: http://localhost:4200
+- Backend health: http://localhost:3001/api/health
 
 ## Arresto e reset
 
