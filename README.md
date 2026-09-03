@@ -67,10 +67,28 @@ Se frontend e health endpoint rispondono, l'app è inizializzata correttamente.
 ## Accesso iniziale (primo login)
 
 1. Apri http://localhost:4200
-2. Scegli il ruolo (Student / Lecturer / Admin)
+2. Scegli il ruolo corretto (Student / Lecturer / Admin)
 3. Inserisci username/password dalla tabella utenti di test qui sotto
 
 > Nota: ad ogni avvio del backend il database viene **azzerato e riseedato** con i dati demo.
+> Se scegli un ruolo diverso da quello dell'utente, il login fallisce anche con password corretta.
+
+## Verifica seed (consigliato se il login fallisce)
+
+Controlla prima i log del backend: dopo l'avvio deve comparire `Database seeded.`.
+
+Puoi verificare le credenziali seed anche via API:
+
+```bash
+curl -X POST http://localhost:3001/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"admin","role":"admin"}'
+```
+
+Esempi validi:
+- Admin: `admin` / `admin` con role `admin`
+- Student: `pzanasi` (o altri studenti) / `student` con role `student`
+- Lecturer: `fbergamasco` (o altri lecturer) / `lecturer` con role `lecturer`
 
 ## Avvii successivi
 
@@ -134,6 +152,11 @@ I sorgenti (`backend/`, `frontend/`) sono montati come volumi: modificando i fil
 - **Porta già in uso**: libera la porta occupata (`4200`, `3001`, `27018`) e rilancia `docker compose up`.
 - **Container non partono dopo modifiche dipendenze**: usa `docker compose up --build`.
 - **Stato incoerente o errori strani al boot**: esegui `docker compose down -v` e poi `docker compose up --build`.
+- **Login sempre rifiutato**:
+  - verifica di usare il ruolo corretto (admin/student/lecturer);
+  - verifica nei log backend la presenza di `Database seeded.`;
+  - riavvia backend per rieseguire il seed;
+  - se usi Docker, fai reset completo con `docker compose down -v` e poi `docker compose up --build`.
 
 ## Utenti di test (seed)
 
